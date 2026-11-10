@@ -1,0 +1,88 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Work | Naivedhya Agrawal</title>
+<meta name="description" content="What Naivedhya Agrawal has built and run at Scholar Scribe Consulting: an operations agent, an evidence-synthesis pipeline, a clinical note reader, benchmarks and apps.">
+<meta name="author" content="Naivedhya Agrawal">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../assets/site.css">
+<link rel="icon" href="../assets/favicon.svg" type="image/svg+xml">
+<script src="../assets/site.js" defer></script>
+</head>
+<body>
+<header class="masthead wrap">
+  <a class="name" href="../">Naivedhya Agrawal</a>
+  <nav aria-label="Main">
+    <a href="../">Home</a>
+    <a href="../work/" aria-current="page">Work</a>
+    <a href="../for/">Field notes</a>
+    <a href="../resume/">Resume</a>
+  </nav>
+</header>
+<main class="wrap">
+
+  <section class="spread page-head">
+    <div><h1>Work</h1></div>
+    <p class="intro">What I have built and run with my co-founder at Scholar Scribe Consulting, most of it for client work. Client names stay private; the numbers are our own.</p>
+  </section>
+
+  <ol class="catalog">
+    <li>
+      <h2 class="h3">The operations agent</h2>
+      <p class="meta">Scholar Scribe Consulting · 2025 to now</p>
+      <p>The set-up that runs our delivery: an AI coding agent working from short instructions in plain language, with house rules, client context and the state of each workstream kept in plain files it reads every session, and the fixed steps run as R scripts. From 3 October to 7 November 2026 it handled 3,289 instructions across 259 workstreams, a median of 27 tool actions and 10.4 minutes each. It never types a client's password, and a person reads every client message before it goes out. <a href="../for/spacexsi/">The numbers are in this field note.</a></p>
+    </li>
+    <li>
+      <h2 class="h3">An evidence-synthesis pipeline</h2>
+      <p class="meta">Scholar Scribe Consulting · 2025 to now</p>
+      <p>Behind 60+ delivered systematic reviews and meta-analyses. Agents plan; R runs the searches, screening, data extraction, risk of bias, GRADE and the meta-analysis. An R second reviewer and an integrity checker block unsupported claims before anything goes to a journal.</p>
+    </li>
+    <li>
+      <h2 class="h3">A clinical note reader for drug-induced liver injury</h2>
+      <p class="meta">Delivered to a hepatology client</p>
+      <p>A fine-tuned 135M-parameter model that turns drug-induced liver injury notes into structured fields, with the R ratio, Hy's law and RUCAM 2016 worked out in code. It is a 64 MB file that runs on a laptop CPU with no install.</p>
+    </li>
+    <li>
+      <h2 class="h3">PramaanBench</h2>
+      <p class="meta">Open benchmark, in build</p>
+      <p>Frontier models tested on Indian health, law and farming questions made from real records: 1,968 Indian case reports, 159,998 farmer questions and 496 court judgments, with answer keys quoted from Indian guidelines and statutes, in English, Hindi and Hinglish. It runs in OpenAI simple-evals and Inspect.</p>
+    </li>
+    <li>
+      <h2 class="h3">SS Arena</h2>
+      <p class="meta">Exam practice app</p>
+      <p>Practice for India's NEET SS and INI-SS exams: 1,006 questions over 90 topics, with streaks, leagues, duels and timed mocks. Built on Firebase and Vercel, and also served inside Claude as an MCP connector.</p>
+    </li>
+    <li>
+      <h2 class="h3">Tend</h2>
+      <p class="meta">Care-circle app for Amazon Alexa+</p>
+      <p>A self-hosted MCP server with 20 tools, OAuth account linking, a browser simulator of the Echo Show and 66 automated tests.</p>
+    </li>
+    <li>
+      <h2 class="h3">Fair Trial</h2>
+      <p class="meta">Hackathon entry on YouCam's skin AI</p>
+      <p>A split-face home trial for skincare products. It finds the treated side 96% of the time, and its verdict engine holds false "it works" calls to 4% by design. <a href="https://github.com/naivedhya27-cmyk/fair-trial">The code is on GitHub.</a></p>
+    </li>
+    <li>
+      <h2 class="h3">MARK C</h2>
+      <p class="meta">Decision-simulation startup</p>
+      <p>Traced why the Monte Carlo engine returned one flat number, and sent pull requests that close a denial-of-service hole, add security headers and harden rate limits.</p>
+    </li>
+    <li>
+      <h2 class="h3">Publication</h2>
+      <p class="meta">BMC Artificial Intelligence, 2026</p>
+      <p>Agrawal N, Kharat M. Real-time AI architectures for intraoperative surgical workflow: from temporal modeling and multi-modal fusion to efficient edge deployment. BMC Artificial Intelligence. 2026;2:22. <a href="https://doi.org/10.1186/s44398-026-00038-5">doi:10.1186/s44398-026-00038-5</a></p>
+    </li>
+  </ol>
+
+</main>
+<footer class="foot wrap">
+  <span>Naivedhya Agrawal · New Delhi</span>
+  <span><a href="mailto:naivedhya27@gmail.com">naivedhya27@gmail.com</a> · <a href="https://github.com/naivedhya27-cmyk">GitHub</a></span>
+</footer>
+</body>
+</html>
