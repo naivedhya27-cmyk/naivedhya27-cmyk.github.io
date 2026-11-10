@@ -1,0 +1,91 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Rollout readout | Naivedhya Agrawal</title>
+<meta name="description" content="Drop a team's daily usage export from the Cursor Admin API and get an adoption readout in your browser: checks on the file, seat activation, habits, Agent use, acceptance and a baseline for a 90-day plan. The file goes nowhere.">
+<meta name="author" content="Naivedhya Agrawal">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../../assets/site.css">
+<link rel="icon" href="../../../assets/favicon.svg" type="image/svg+xml">
+<script src="../../../assets/site.js" defer></script>
+<script src="../../../assets/readout.js" defer></script>
+</head>
+<body>
+<header class="masthead wrap">
+  <a class="name" href="../../../">Naivedhya Agrawal</a>
+  <nav aria-label="Main">
+    <a href="../../../">Home</a>
+    <a href="../../../work/">Work</a>
+    <a href="../../../for/" aria-current="page">Field notes</a>
+    <a href="../../../resume/">Resume</a>
+  </nav>
+</header>
+<main class="wrap">
+
+  <section class="spread opener">
+    <div>
+      <p class="kicker">A working tool for the field note <a href="../../../for/spacexsi/">Five weeks of agent work, measured</a></p>
+      <h1>Rollout readout</h1>
+      <p class="byline">Naivedhya Agrawal · New Delhi · 10 November 2026</p>
+      <div class="lede">
+        <p>The first thing I would do at any account is read its own usage. Drop a team's daily usage export from the Admin API here and the page writes the readout I would bring to the first account review: what the file can and cannot tell you, who has started, who has a habit, how much of the work goes through Agent, and the baseline for the 90-day plan.</p>
+        <p>The file is read by this page in your browser and goes nowhere else. Emails are never shown.</p>
+      </div>
+    </div>
+    <div class="side">
+      <div id="drop" class="drop" tabindex="0" role="button" aria-label="Choose a usage export file">
+        <p class="drop-main">Drop the export here, or <label class="pick">choose a file<input id="file" type="file" accept=".json,.csv,application/json,text/csv"></label></p>
+        <p class="small">The JSON that <code>/teams/daily-usage-data</code> returns (one response, or several in one array), or a CSV with the same columns.</p>
+      </div>
+      <p class="small"><button id="example" class="linkish" type="button">Load the two example rows from Cursor's Admin API docs</button> to see every part of the readout.</p>
+      <details class="how">
+        <summary>How to export 30 days with every seat</summary>
+        <p class="small">macOS or Linux, with a team admin API key in <code>CURSOR_ADMIN_KEY</code>:</p>
+<pre><code>END=$(($(date +%s) * 1000)); START=$((END - 30 * 86400000))
+curl -s -X POST https://api.cursor.com/teams/daily-usage-data \
+  -u "$CURSOR_ADMIN_KEY:" -H "Content-Type: application/json" \
+  -d "{\"startDate\": $START, \"endDate\": $END, \"page\": 1, \"pageSize\": 1000}" &gt; usage.json</code></pre>
+        <p class="small">Windows PowerShell:</p>
+<pre><code>$end = [DateTimeOffset]::UtcNow.ToUnixTimeMilliseconds(); $start = $end - 30 * 86400000
+$auth = [Convert]::ToBase64String([Text.Encoding]::ASCII.GetBytes("$($env:CURSOR_ADMIN_KEY):"))
+Invoke-RestMethod -Method Post -Uri https://api.cursor.com/teams/daily-usage-data `
+  -Headers @{ Authorization = "Basic $auth" } -ContentType 'application/json' `
+  -Body (@{ startDate = $start; endDate = $end; page = 1; pageSize = 1000 } | ConvertTo-Json) |
+  ConvertTo-Json -Depth 6 | Set-Content usage.json</code></pre>
+        <p class="small">Without <code>page</code> and <code>pageSize</code> the API returns active users only, which hides the seats that never started. One request covers at most 30 days; for a longer period, or more than 1,000 seats, put the responses in one array.</p>
+      </details>
+      <p class="note">it checks the file before it trusts it</p>
+    </div>
+  </section>
+
+  <section id="out" class="readout" hidden aria-live="polite"></section>
+
+  <section class="spread rules-s">
+    <div class="txt">
+      <h2>How the readout decides</h2>
+      <p>These are my starting thresholds. With a customer they are agreed with the team in the first week, and the readout then runs every week on the same export.</p>
+    </div>
+    <table class="plan rules">
+      <thead><tr><th scope="col">Measure</th><th scope="col">Flagged below</th><th scope="col">Why it matters</th></tr></thead>
+      <tbody>
+        <tr><td>Seats that used it at least once</td><td data-label="Flagged below">60%</td><td data-label="Why it matters">Activation comes before depth: unused seats are the first conversation.</td></tr>
+        <tr><td>Active seats using it on most working days</td><td data-label="Flagged below">40%</td><td data-label="Why it matters">A habit, not a trial. Most working days means at least 60% of weekdays in the file.</td></tr>
+        <tr><td>Agent share of requests</td><td data-label="Flagged below">25%</td><td data-label="Why it matters">Agent is where one instruction carries the most work; chat alone leaves that on the table.</td></tr>
+        <tr><td>Tab acceptance</td><td data-label="Flagged below">25%</td><td data-label="Why it matters">The first place to look is the repository rules and docs the model works from.</td></tr>
+        <tr><td>Active seats on the newest client</td><td data-label="Flagged below">70%</td><td data-label="Why it matters">Every seat should have the same features and fixes before results are compared.</td></tr>
+      </tbody>
+    </table>
+  </section>
+
+</main>
+<footer class="foot wrap">
+  <span>Naivedhya Agrawal · New Delhi</span>
+  <span><a href="mailto:naivedhya27@gmail.com">naivedhya27@gmail.com</a> · <a href="https://github.com/naivedhya27-cmyk">GitHub</a></span>
+</footer>
+</body>
+</html>

@@ -230,6 +230,45 @@ table { border-collapse: collapse; width: 100%; }
   .cv-spread { display: block; margin: 0; }
 }
 
+/* rollout readout */
+.drop { position: relative; border: 1.5px dashed #b9b2a2; background: rgba(255, 255, 255, .6); padding: clamp(18px, 2.4vw, 32px); border-radius: 3px; transition: background .2s, border-color .2s; }
+.drop.over { background: #fff; border-color: var(--pen); }
+.drop:focus-visible { outline: 2px solid var(--pen); outline-offset: 3px; }
+.drop p { max-width: none; }
+.drop-main { font-size: 1.12em; margin: 0 0 .4em; }
+.pick { color: var(--link); text-decoration: underline; text-underline-offset: .18em; cursor: pointer; }
+.pick input { position: absolute; width: 1px; height: 1px; opacity: 0; pointer-events: none; }
+.linkish { font: inherit; color: var(--link); background: none; border: 0; padding: 0; text-align: left; text-decoration: underline; text-underline-offset: .18em; cursor: pointer; }
+.btn { font: inherit; font-size: .95em; color: var(--sheet); background: var(--ink); border: 0; padding: .55em 1.1em; border-radius: 2px; cursor: pointer; }
+.btn:hover { background: #2c3a5c; }
+details.how { margin: 1em 0; border-top: 1px solid var(--rule); border-bottom: 1px solid var(--rule); padding: .6em 0; }
+details.how summary { cursor: pointer; }
+pre { background: #f3f0e8; padding: .9em 1em; margin: .3em 0 1em; white-space: pre-wrap; overflow-wrap: anywhere; font-size: .74em; line-height: 1.5; border-left: 2px solid var(--rule); max-width: 100%; }
+code { font-family: Consolas, "SFMono-Regular", "Liberation Mono", monospace; font-size: .86em; overflow-wrap: anywhere; }
+pre code { font-size: 1em; }
+.readout { scroll-margin-top: 16px; }
+.readout > .spread { margin-bottom: clamp(44px, 5vw, 84px); }
+.checks { list-style: none; margin: 0; padding: 0; }
+.checks li { border-top: 1px solid var(--rule); padding: .7em 0 .7em 3.6em; position: relative; }
+.checks li:last-child { border-bottom: 1px solid var(--rule); }
+.checks .tick { position: absolute; left: 0; top: .3em; font-family: var(--hand); font-size: 1.45em; color: var(--soft); }
+.checks li.look .tick { color: var(--pen); }
+ol.say { margin: 0 0 1em; padding-left: 1.3em; }
+ol.say li { margin: .35em 0 .7em; max-width: 62ch; }
+.rc { display: block; width: 100%; height: auto; max-width: 640px; }
+.rc .ax { font-family: var(--serif); font-size: 12px; fill: #56637f; }
+@media (max-width: 639px) { .rc .ax { font-size: 16px; } }
+.rc-title { margin: 0 0 .2em; font-size: .95em; }
+.rchart svg + .rc-title { margin-top: 1.4em; }
+.small-grid h3 { font-size: 1em; }
+.small-grid p { margin: 0; }
+.actions-row { margin-top: 2em; }
+.try a { text-decoration-color: var(--pen); text-decoration-thickness: 2px; }
+.plan.rules { margin-top: .4em; }
+.plan.rules td:first-child { white-space: normal; width: 38%; }
+.plan.rules td:nth-child(2) { width: 9em; white-space: nowrap; }
+@media (max-width: 760px) { .plan.rules td:first-child, .plan.rules td:nth-child(2) { width: auto; } }
+
 /* motion: only after site.js has marked the page (never with reduced motion) */
 .js mark { background-size: 0% 70%; transition: background-size .85s cubic-bezier(.25, .7, .2, 1) .15s; }
 .js mark.in { background-size: 100% 70%; }
