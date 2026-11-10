@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>A Hindi farm helpline agent, tested on real calls | Naivedhya Agrawal</title>
+<meta name="description" content="A proof of concept of a Hindi voice agent for a farmers' helpline, built on Sarvam-105B and Bulbul and tested on 200 real Kisan Call Centre calls from Uttar Pradesh. Written for Sarvam's Deployment Strategist and Agent Engineer roles.">
+<meta name="author" content="Naivedhya Agrawal">
+<meta name="robots" content="noindex, nofollow">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Caveat:wght@400;500;600&family=Source+Serif+4:ital,opsz,wght@0,8..60,400;0,8..60,600;1,8..60,400&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="../../assets/site.css">
+<link rel="icon" href="../../assets/favicon.svg" type="image/svg+xml">
+<script src="../../assets/site.js" defer></script>
+<link href="https://fonts.googleapis.com/css2?family=Noto+Serif+Devanagari:wght@400;600&display=swap" rel="stylesheet">
+</head>
+<body>
+<header class="masthead wrap">
+  <a class="name" href="../../">Naivedhya Agrawal</a>
+  <nav aria-label="Main">
+    <a href="../../">Home</a>
+    <a href="../../work/">Work</a>
+    <a href="../../for/" aria-current="page">Field notes</a>
+    <a href="../../resume/">Resume</a>
+  </nav>
+</header>
+<main class="wrap">
+
+  <section class="spread opener">
+    <div>
+      <p class="kicker">A field note for Sarvam: Deployment Strategist and Agent Engineer</p>
+      <h1>A Hindi farm helpline agent, tested on 200 real calls</h1>
+      <p class="byline">Naivedhya Agrawal · New Delhi · 10 November 2026</p>
+      <div class="lede">
+        <p>The Kisan Call Centre answers farmers' questions by phone, and the Ministry of Agriculture publishes its call log. For Uttar Pradesh in 2024 that is 100,000 calls from 79 districts, each with the advisor's note of the question and the answer given; 99.5% of the answers are in Hindi.</p>
+        <p>I built a proof of concept of the agent such a helpline would put on its line, on Sarvam's own stack: Sarvam-105B for the conversation and the tool calls, Bulbul for the voice. Then I tested it on 200 real calls from September to November 2024, next to the same model with no tools, and had Sarvam-105B grade both against what the human advisor actually said.</p>
+        <p class="try"><a href="#hear">Hear three of its answers</a>, or read all 200 calls, the agent's spec and the test harness <a href="https://github.com/naivedhya27-cmyk/kcc-helpline-agent">on GitHub</a>.</p>
+      </div>
+    </div>
+    <div class="side">
+      <h2 class="h-quiet">The five numbers</h2>
+      <table class="facts">
+        <tbody>
+          <tr><th scope="row">What farmers ask</th><td>weather <mark>44%</mark>, government schemes 25%, pests, diseases and fertilizer 22%</td></tr>
+          <tr><th scope="row">Calls filed under the wrong category</th><td><mark>13.7%</mark>, mostly weather questions filed as water management or crop practice</td></tr>
+          <tr><th scope="row">Same or partly the same advice as the advisor</th><td>agent <mark>55%</mark>; the same model with no tools 36%</td></tr>
+          <tr><th scope="row">Said a number, name or dose with no source</th><td>agent <mark>2%</mark>; the same model with no tools 25%</td></tr>
+          <tr><th scope="row">Model time per call</th><td>median <mark>422 ms</mark>, 95% within 673 ms; Rs 40 per 1,000 answers</td></tr>
+        </tbody>
+      </table>
+      <p class="small">One full test run, 200 calls answered twice and graded twice, costs about Rs 14 of API credit.</p>
+      <p class="note">every call is real; nothing here is made up</p>
+    </div>
+  </section>
+
+  <section class="spread">
+    <div class="txt">
+      <h2>What farmers actually ask</h2>
+      <p>Read by the advisors' own notes, 44% of the calls ask about the weather, 25% about government schemes, most of them PM-KISAN payments, and 22% about pests, diseases and fertilizer.</p>
+      <p>The category field tells a different story on 13.7% of calls. A team that sizes its agent from that field plans for 31% weather traffic; the notes say 44%. So the first job on any deployment is to read the conversations, not the dashboard.</p>
+    </div>
+    <figure class="chart"><div class="fig-d"><svg role="img" aria-label="Bar chart: share of calls by what was asked, against the category they were filed under" focusable="false" xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 518.40 237.60'>
+<g class='svglite'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+    .svglite g.glyphgroup path {
+      fill: inherit;
+      stroke: none;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: none;'/>
+<defs>
+  <clipPath id='s1d-cpMC4wMHw1MTguNDB8MC4wMHwyMzcuNjA='>
+    <rect x='0.00' y='0.00' width='518.40' height='237.60' />
+  </clipPath>
+</defs>
+<g clip-path='url(#s1d-cpMC4wMHw1MTguNDB8MC4wMHwyMzcuNjA=)'>
+<rect x='0.00' y='0.00' width='518.40' height='237.60' style='stroke-width: 1.07; stroke: none;' />
+</g>
+<defs>
+  <clipPath id='s1d-cpMTE3LjI2fDUwNC40NXw0Mi4wMnwyMTYuNDg='>
+    <rect x='117.26' y='42.02' width='387.19' height='174.46' />
+  </clipPath>
+</defs>
+<g clip-path='url(#s1d-cpMTE3LjI2fDUwNC40NXw0Mi4wMnwyMTYuNDg=)'>
+<rect x='117.26' y='42.02' width='387.19' height='174.46' style='stroke-width: 1.07; stroke: none;' />
+<polyline points='117.26,216.48 117.26,42.02 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='195.59,216.48 195.59,42.02 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='273.92,216.48 273.92,42.02 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='352.24,216.48 352.24,42.02 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='430.57,216.48 430.57,42.02 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<rect x='117.26' y='190.87' width='5.20' height='17.45' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='117.26' y='162.73' width='4.81' height='17.45' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='117.26' y='134.59' width='58.18' height='17.45' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='117.26' y='106.46' width='173.64' height='17.45' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='117.26' y='78.32' width='195.74' height='17.45' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='117.26' y='50.18' width='345.71' height='17.45' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<circle cx='123.68' cy='199.59' r='2.77' style='stroke-width: 0.85; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='120.35' cy='171.46' r='2.77' style='stroke-width: 0.85; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='265.54' cy='143.32' r='2.77' style='stroke-width: 0.85; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='305.23' cy='115.18' r='2.77' style='stroke-width: 0.85; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='311.67' cy='87.04' r='2.77' style='stroke-width: 0.85; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='360.37' cy='58.90' r='2.77' style='stroke-width: 0.85; stroke: #1F2A44; fill: #FFFFFF;' />
+<text x='125.78' y='202.64' style='font-size: 9.10px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='13.28px' lengthAdjust='spacingAndGlyphs'>1%</text>
+<text x='125.39' y='174.50' style='font-size: 9.10px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='13.28px' lengthAdjust='spacingAndGlyphs'>1%</text>
+<text x='178.76' y='146.37' style='font-size: 9.10px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='13.28px' lengthAdjust='spacingAndGlyphs'>7%</text>
+<text x='295.42' y='118.23' style='font-size: 9.10px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='18.09px' lengthAdjust='spacingAndGlyphs'>22%</text>
+<text x='317.53' y='90.09' style='font-size: 9.10px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='18.09px' lengthAdjust='spacingAndGlyphs'>25%</text>
+<text x='467.49' y='61.95' style='font-size: 9.10px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='18.09px' lengthAdjust='spacingAndGlyphs'>44%</text>
+<text x='352.53' y='51.85' text-anchor='end' style='font-size: 14.23px;fill: #C8553D; font-family: "Caveat";' textLength='103.27px' lengthAdjust='spacingAndGlyphs'>filed as weather: 31%</text>
+</g>
+<g clip-path='url(#s1d-cpMC4wMHw1MTguNDB8MC4wMHwyMzcuNjA=)'>
+<text x='112.33' y='202.61' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='24.55px' lengthAdjust='spacingAndGlyphs'>Other</text>
+<text x='112.33' y='174.47' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='58.73px' lengthAdjust='spacingAndGlyphs'>Market prices</text>
+<text x='112.33' y='146.33' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='73.48px' lengthAdjust='spacingAndGlyphs'>Farming practice</text>
+<text x='112.33' y='118.20' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='104.36px' lengthAdjust='spacingAndGlyphs'>Pests, diseases, fertilizer</text>
+<text x='112.33' y='90.06' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='92.91px' lengthAdjust='spacingAndGlyphs'>Government schemes</text>
+<text x='112.33' y='61.92' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='35.91px' lengthAdjust='spacingAndGlyphs'>Weather</text>
+<text x='117.26' y='227.44' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='13.16px' lengthAdjust='spacingAndGlyphs'>0%</text>
+<text x='195.59' y='227.44' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='17.92px' lengthAdjust='spacingAndGlyphs'>10%</text>
+<text x='273.92' y='227.44' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='17.92px' lengthAdjust='spacingAndGlyphs'>20%</text>
+<text x='352.24' y='227.44' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='17.92px' lengthAdjust='spacingAndGlyphs'>30%</text>
+<text x='430.57' y='227.44' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='17.92px' lengthAdjust='spacingAndGlyphs'>40%</text>
+<text x='7.97' y='31.74' style='font-size: 9.50px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='404.12px' lengthAdjust='spacingAndGlyphs'>Bars: what the advisor's note says was asked. Circles: the category the call was filed under.</text>
+<text x='7.97' y='18.34' style='font-size: 12.50px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='360.58px' lengthAdjust='spacingAndGlyphs'>What 100,000 farmers' calls asked, January to November 2024</text>
+</g>
+</g>
+</svg></div><div class="fig-m"><svg role="img" aria-label="Bar chart: share of calls by what was asked, against the category they were filed under" focusable="false" xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 302.40 244.80'>
+<g class='svglite'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+    .svglite g.glyphgroup path {
+      fill: inherit;
+      stroke: none;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: none;'/>
+<defs>
+  <clipPath id='s1m-cpMC4wMHwzMDIuNDB8MC4wMHwyNDQuODA='>
+    <rect x='0.00' y='0.00' width='302.40' height='244.80' />
+  </clipPath>
+</defs>
+<g clip-path='url(#s1m-cpMC4wMHwzMDIuNDB8MC4wMHwyNDQuODA=)'>
+<rect x='0.00' y='0.00' width='302.40' height='244.80' style='stroke-width: 1.07; stroke: none;' />
+</g>
+<defs>
+  <clipPath id='s1m-cpMTE3LjI2fDI4OC40NXw0Mi4wMnwyMjMuNjg='>
+    <rect x='117.26' y='42.02' width='171.19' height='181.66' />
+  </clipPath>
+</defs>
+<g clip-path='url(#s1m-cpMTE3LjI2fDI4OC40NXw0Mi4wMnwyMjMuNjg=)'>
+<rect x='117.26' y='42.02' width='171.19' height='181.66' style='stroke-width: 1.07; stroke: none;' />
+<polyline points='117.26,223.68 117.26,42.02 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='151.89,223.68 151.89,42.02 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='186.52,223.68 186.52,42.02 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='221.16,223.68 221.16,42.02 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='255.79,223.68 255.79,42.02 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<rect x='117.26' y='197.01' width='2.30' height='18.17' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='117.26' y='167.71' width='2.13' height='18.17' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='117.26' y='138.41' width='25.72' height='18.17' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='117.26' y='109.12' width='76.77' height='18.17' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='117.26' y='79.82' width='86.54' height='18.17' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='117.26' y='50.52' width='152.85' height='18.17' style='stroke-width: 1.07; stroke: none; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<circle cx='120.10' cy='206.10' r='2.77' style='stroke-width: 0.85; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='118.63' cy='176.80' r='2.77' style='stroke-width: 0.85; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='182.82' cy='147.50' r='2.77' style='stroke-width: 0.85; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='200.37' cy='118.20' r='2.77' style='stroke-width: 0.85; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='203.22' cy='88.90' r='2.77' style='stroke-width: 0.85; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='224.75' cy='59.60' r='2.77' style='stroke-width: 0.85; stroke: #1F2A44; fill: #FFFFFF;' />
+<text x='122.88' y='209.15' style='font-size: 9.10px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='13.28px' lengthAdjust='spacingAndGlyphs'>1%</text>
+<text x='122.71' y='179.85' style='font-size: 9.10px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='13.28px' lengthAdjust='spacingAndGlyphs'>1%</text>
+<text x='146.31' y='150.55' style='font-size: 9.10px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='13.28px' lengthAdjust='spacingAndGlyphs'>7%</text>
+<text x='198.56' y='121.25' style='font-size: 9.10px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='18.09px' lengthAdjust='spacingAndGlyphs'>22%</text>
+<text x='208.33' y='91.95' style='font-size: 9.10px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='18.09px' lengthAdjust='spacingAndGlyphs'>25%</text>
+<text x='274.63' y='62.65' style='font-size: 9.10px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='18.09px' lengthAdjust='spacingAndGlyphs'>44%</text>
+<text x='212.20' y='51.48' text-anchor='middle' style='font-size: 12.52px;fill: #C8553D; font-family: "Caveat";' textLength='90.86px' lengthAdjust='spacingAndGlyphs'>filed as weather: 31%</text>
+</g>
+<g clip-path='url(#s1m-cpMC4wMHwzMDIuNDB8MC4wMHwyNDQuODA=)'>
+<text x='112.33' y='209.11' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='24.55px' lengthAdjust='spacingAndGlyphs'>Other</text>
+<text x='112.33' y='179.81' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='58.73px' lengthAdjust='spacingAndGlyphs'>Market prices</text>
+<text x='112.33' y='150.51' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='73.48px' lengthAdjust='spacingAndGlyphs'>Farming practice</text>
+<text x='112.33' y='121.22' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='104.36px' lengthAdjust='spacingAndGlyphs'>Pests, diseases, fertilizer</text>
+<text x='112.33' y='91.92' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='92.91px' lengthAdjust='spacingAndGlyphs'>Government schemes</text>
+<text x='112.33' y='62.62' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='35.91px' lengthAdjust='spacingAndGlyphs'>Weather</text>
+<text x='117.26' y='234.64' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='13.16px' lengthAdjust='spacingAndGlyphs'>0%</text>
+<text x='151.89' y='234.64' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='17.92px' lengthAdjust='spacingAndGlyphs'>10%</text>
+<text x='186.52' y='234.64' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='17.92px' lengthAdjust='spacingAndGlyphs'>20%</text>
+<text x='221.16' y='234.64' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='17.92px' lengthAdjust='spacingAndGlyphs'>30%</text>
+<text x='255.79' y='234.64' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='17.92px' lengthAdjust='spacingAndGlyphs'>40%</text>
+<text x='7.97' y='31.74' style='font-size: 9.50px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='222.08px' lengthAdjust='spacingAndGlyphs'>bars: the advisor's note; circles: the category filed</text>
+<text x='7.97' y='18.34' style='font-size: 12.50px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='145.42px' lengthAdjust='spacingAndGlyphs'>What 100,000 calls asked</text>
+</g>
+</g>
+</svg></div><figcaption>All 100,000 calls. A bar longer than its circle is a question that was filed under another category.</figcaption></figure>
+  </section>
+
+  <section class="plan-s">
+    <div class="spread">
+      <div class="txt">
+        <h2>Three kinds of question, three sources of truth</h2>
+        <p>Each kind of question needs its facts from somewhere other than the model's memory, and a safe move when the facts are missing.</p>
+      </div>
+      <p class="note">the model routes; the facts come from tools</p>
+    </div>
+    <table class="plan">
+      <thead><tr><th scope="col">Question</th><th scope="col">Where the answer comes from</th><th scope="col">When there is no answer</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>Weather</td>
+          <td data-label="Where the answer comes from">A forecast tool for the caller's district. In this test it returns the weather models' forecast for that district and the next five days from the Open-Meteo archive. The agent may say only the numbers it returns, and adds one tip for the crop.</td>
+          <td data-label="When there is no answer">No forecast, no numbers: the call goes to an expert.</td>
+        </tr>
+        <tr>
+          <td>Schemes</td>
+          <td data-label="Where the answer comes from">A dated fact card built from the advisors' own answers: how to check PM-KISAN status, e-KYC, the helplines, the 72-hour rule for crop loss, and which instalment had been released on the day of the call. The agent never asks for an Aadhaar number, a bank account or an OTP.</td>
+          <td data-label="When there is no answer">The official route to check, and the helpline.</td>
+        </tr>
+        <tr>
+          <td>Pests, diseases, fertilizer</td>
+          <td data-label="Where the answer comes from">The 21,758 answers the advisors gave between January and August 2024. The agent searches them and picks one by its id; the system then reads that answer to the caller word for word, with a fixed safety line for sprays.</td>
+          <td data-label="When there is no answer">No past answer for the same crop and problem: the call goes to a human expert.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="lessons">
+    <h2>What testing caught</h2>
+    <div class="spread">
+      <div class="txt">
+        <p>Before the real test I ran the agent on six calls from July and August, the months the answer bank comes from. One of them, a guava call, went wrong twice, in two ways that matter on a farm, and both fixes went into code rather than into the prompt. Two more catches came after the real test, and both were my bugs, not the model's.</p>
+      </div>
+      <p class="note">a prompt rule is a request; code is a guarantee</p>
+    </div>
+    <ol class="grid2">
+      <li>
+        <h3><span class="num">1</span>A whitefly question got a fruit-fly spray</h3>
+        <p>A farmer in Moradabad asked about whitefly on guava. The search matched the word "fly", and the agent passed on a quinalphos spray meant for fruit fly. The prompt already said to use only an answer for the same problem. The fix moved that rule into the search: a past answer comes back only if its question covers the caller's crop and problem.</p>
+      </li>
+      <li>
+        <h3><span class="num">2</span>A verified dose was read out double</h3>
+        <p>The verified answer said imidacloprid 17.8% SL at 1 ml per 2 litres of water. The agent told the farmer 1 ml per litre. Now the model never says a dose in its own words: it picks a verified answer by its id, and the system reads that answer out as written. A number guard checks every other number against the tool results before the voice speaks.</p>
+      </li>
+      <li>
+        <h3><span class="num">3</span>My own guard misread Hindi numbers</h3>
+        <p>On this laptop's Windows set-up, R's punctuation class also matched Hindi vowel signs, so छह हजार (six thousand) was read as a plain 6 and most number words were not read at all. The guard sent 16 answers to an expert, 15 of them about schemes, and let 4 weather answers through unchecked. I fixed the parser, changed nothing else, and re-ran the same 200 calls from the cached model answers. 14 of the 16 went through, and the 4 weather answers were stopped. One of them had promised rain above 80% today and tomorrow, when the forecast for tomorrow said 8%.</p>
+      </li>
+      <li>
+        <h3><span class="num">4</span>My grader could not see the block</h3>
+        <p>The grader saw each call's date, district and crop but not the block, which both answers had been given, so when the plain model named the caller's block it was marked as made up. I gave the grader the same context and re-graded every call. The plain model's answers with no source fell from 48% to 25%, and this page uses the new grades. The re-grade also tested the grader: 27% of its grades moved, and the agent's score went from 62% to 55%. The agent's lead held under both graders, so read the gap, not the exact level.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="spread">
+    <div class="txt">
+      <h2>The test: 200 calls from September to November</h2>
+      <p>The agent gave the same or partly the same advice as the advisor on 55% of calls, against 36% for the same model with no tools. Paired call by call, the 95% bootstrap interval for the agent's lead runs from 10 to 28 points.</p>
+      <p>On weather calls the agent called the forecast tool 98% of the time, and its advice was the same or partly the same as the advisor's on 85% of them. The same model with no tools has no forecast, yet 39 of its 40 weather answers told the farmer what the weather would do. 30 promised clear or dry weather, as in मौसम साफ रहेगा (the weather will stay clear), and for 22 of those the forecast for that district gave rain a 50% or higher chance that day or the next.</p>
+      <p>On pest, disease and fertilizer calls the agent read a verified answer 78% of the time and sent 22% to an expert, and it never put a dose in its own words. The model with no tools gave a dose or a product formulation on 12% of those calls, and the grader found a claim with no source in 38% of its answers.</p>
+      <p>In 9 answers the model with no tools gave a phone number that appears in no official list and not in the advisor's answer; the agent did that in none. 26% of the agent's calls went to a human. Most of them point at a gap to close: a missing verified answer, a price feed, or a fact the card lacks. 8 came from the number guard: 4 weather answers with a number the forecast did not give, and 4 right answers my parser still misreads, such as दो-दो हजार (two thousand each). The parser cases are the next fix, to be checked on fresh calls rather than these 200.</p>
+    </div>
+    <figure class="chart"><div class="fig-d"><svg role="img" aria-label="Dot chart: the agent against the same model with no tools, by question type" focusable="false" xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 518.40 230.40'>
+<g class='svglite'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+    .svglite g.glyphgroup path {
+      fill: inherit;
+      stroke: none;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: none;'/>
+<defs>
+  <clipPath id='s2d-cpMC4wMHw1MTguNDB8MC4wMHwyMzAuNDA='>
+    <rect x='0.00' y='0.00' width='518.40' height='230.40' />
+  </clipPath>
+</defs>
+<g clip-path='url(#s2d-cpMC4wMHw1MTguNDB8MC4wMHwyMzAuNDA=)'>
+<rect x='0.00' y='-0.000000000000057' width='518.40' height='230.40' style='stroke-width: 1.07; stroke: none;' />
+</g>
+<defs>
+  <clipPath id='s2d-cpMTMzLjA0fDMxMC4xMXw2OS43M3wyMDkuMjg='>
+    <rect x='133.04' y='69.73' width='177.07' height='139.55' />
+  </clipPath>
+</defs>
+<g clip-path='url(#s2d-cpMTMzLjA0fDMxMC4xMXw2OS43M3wyMDkuMjg=)'>
+<rect x='133.04' y='69.73' width='177.07' height='139.55' style='stroke-width: 1.07; stroke: none;' />
+<polyline points='141.09,209.28 141.09,69.73 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='181.33,209.28 181.33,69.73 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='221.57,209.28 221.57,69.73 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='261.82,209.28 261.82,69.73 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='302.06,209.28 302.06,69.73 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='141.09,189.34 184.55,189.34 ' style='stroke-width: 2.56; stroke: #B9C6D6; stroke-linecap: butt;' />
+<polyline points='150.75,156.12 202.26,156.12 ' style='stroke-width: 2.56; stroke: #B9C6D6; stroke-linecap: butt;' />
+<polyline points='141.09,122.89 170.06,122.89 ' style='stroke-width: 2.56; stroke: #B9C6D6; stroke-linecap: butt;' />
+<polyline points='141.09,89.67 141.09,89.67 ' style='stroke-width: 2.56; stroke: #B9C6D6; stroke-linecap: butt;' />
+<circle cx='141.09' cy='89.67' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #C8553D;' />
+<circle cx='141.09' cy='122.89' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #C8553D;' />
+<circle cx='150.75' cy='156.12' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #C8553D;' />
+<circle cx='141.09' cy='189.34' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #C8553D;' />
+<circle cx='141.09' cy='89.67' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='170.06' cy='122.89' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='202.26' cy='156.12' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='184.55' cy='189.34' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #FFFFFF;' />
+</g>
+<g clip-path='url(#s2d-cpMC4wMHw1MTguNDB8MC4wMHwyMzAuNDA=)'>
+</g>
+<defs>
+  <clipPath id='s2d-cpMzI3LjM5fDUwNC40NXw2OS43M3wyMDkuMjg='>
+    <rect x='327.39' y='69.73' width='177.07' height='139.55' />
+  </clipPath>
+</defs>
+<g clip-path='url(#s2d-cpMzI3LjM5fDUwNC40NXw2OS43M3wyMDkuMjg=)'>
+<rect x='327.39' y='69.73' width='177.07' height='139.55' style='stroke-width: 1.07; stroke: none;' />
+<polyline points='335.44,209.28 335.44,69.73 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='375.68,209.28 375.68,69.73 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='415.92,209.28 415.92,69.73 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='456.16,209.28 456.16,69.73 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='496.40,209.28 496.40,69.73 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='404.65,189.34 415.92,189.34 ' style='stroke-width: 2.56; stroke: #B9C6D6; stroke-linecap: butt;' />
+<polyline points='370.85,156.12 409.48,156.12 ' style='stroke-width: 2.56; stroke: #B9C6D6; stroke-linecap: butt;' />
+<polyline points='388.56,122.89 435.24,122.89 ' style='stroke-width: 2.56; stroke: #B9C6D6; stroke-linecap: butt;' />
+<polyline points='427.19,89.67 472.26,89.67 ' style='stroke-width: 2.56; stroke: #B9C6D6; stroke-linecap: butt;' />
+<circle cx='472.26' cy='89.67' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #C8553D;' />
+<circle cx='435.24' cy='122.89' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #C8553D;' />
+<circle cx='409.48' cy='156.12' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #C8553D;' />
+<circle cx='415.92' cy='189.34' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #C8553D;' />
+<circle cx='427.19' cy='89.67' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='388.56' cy='122.89' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='370.85' cy='156.12' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='404.65' cy='189.34' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #FFFFFF;' />
+</g>
+<g clip-path='url(#s2d-cpMC4wMHw1MTguNDB8MC4wMHwyMzAuNDA=)'>
+</g>
+<defs>
+  <clipPath id='s2d-cpMTMzLjA0fDMxMC4xMXw0Mi4wMnw2OS43Mw=='>
+    <rect x='133.04' y='42.02' width='177.07' height='27.71' />
+  </clipPath>
+</defs>
+<g clip-path='url(#s2d-cpMTMzLjA0fDMxMC4xMXw0Mi4wMnw2OS43Mw==)'>
+<text x='137.43' y='53.93' style='font-size: 9.50px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='94.97px' lengthAdjust='spacingAndGlyphs'>Said a number, name</text>
+<text x='137.43' y='64.19' style='font-size: 9.50px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='101.89px' lengthAdjust='spacingAndGlyphs'>or dose with no source</text>
+</g>
+<g clip-path='url(#s2d-cpMC4wMHw1MTguNDB8MC4wMHwyMzAuNDA=)'>
+</g>
+<defs>
+  <clipPath id='s2d-cpMzI3LjM5fDUwNC40NXw0Mi4wMnw2OS43Mw=='>
+    <rect x='327.39' y='42.02' width='177.07' height='27.71' />
+  </clipPath>
+</defs>
+<g clip-path='url(#s2d-cpMzI3LjM5fDUwNC40NXw0Mi4wMnw2OS43Mw==)'>
+<text x='331.77' y='53.93' style='font-size: 9.50px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='108.92px' lengthAdjust='spacingAndGlyphs'>Same or partly the same</text>
+<text x='331.77' y='64.19' style='font-size: 9.50px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='93.84px' lengthAdjust='spacingAndGlyphs'>advice as the advisor</text>
+</g>
+<g clip-path='url(#s2d-cpMC4wMHw1MTguNDB8MC4wMHwyMzAuNDA=)'>
+<text x='141.09' y='220.24' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='13.16px' lengthAdjust='spacingAndGlyphs'>0%</text>
+<text x='181.33' y='220.24' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='17.92px' lengthAdjust='spacingAndGlyphs'>25%</text>
+<text x='221.57' y='220.24' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='17.92px' lengthAdjust='spacingAndGlyphs'>50%</text>
+<text x='261.82' y='220.24' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='17.92px' lengthAdjust='spacingAndGlyphs'>75%</text>
+<text x='302.06' y='220.24' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='22.69px' lengthAdjust='spacingAndGlyphs'>100%</text>
+<text x='335.44' y='220.24' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='13.16px' lengthAdjust='spacingAndGlyphs'>0%</text>
+<text x='375.68' y='220.24' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='17.92px' lengthAdjust='spacingAndGlyphs'>25%</text>
+<text x='415.92' y='220.24' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='17.92px' lengthAdjust='spacingAndGlyphs'>50%</text>
+<text x='456.16' y='220.24' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='17.92px' lengthAdjust='spacingAndGlyphs'>75%</text>
+<text x='496.40' y='220.24' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='22.69px' lengthAdjust='spacingAndGlyphs'>100%</text>
+<text x='128.11' y='192.36' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='73.48px' lengthAdjust='spacingAndGlyphs'>Farming practice</text>
+<text x='128.11' y='159.13' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='120.14px' lengthAdjust='spacingAndGlyphs'>Pests, diseases and fertilizer</text>
+<text x='128.11' y='125.91' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='92.91px' lengthAdjust='spacingAndGlyphs'>Government schemes</text>
+<text x='128.11' y='92.68' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='35.91px' lengthAdjust='spacingAndGlyphs'>Weather</text>
+<text x='7.97' y='31.74' style='font-size: 9.50px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='170.67px' lengthAdjust='spacingAndGlyphs'>filled: the agent; open: the bare model</text>
+<text x='7.97' y='18.34' style='font-size: 12.50px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='362.95px' lengthAdjust='spacingAndGlyphs'>The agent against the same model with no tools, 200 real calls</text>
+</g>
+</g>
+</svg></div><div class="fig-m"><svg role="img" aria-label="Dot chart: the agent against the same model with no tools, by question type" focusable="false" xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 302.40 331.20'>
+<g class='svglite'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+    .svglite g.glyphgroup path {
+      fill: inherit;
+      stroke: none;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: none;'/>
+<defs>
+  <clipPath id='s2m-cpMC4wMHwzMDIuNDB8MC4wMHwzMzEuMjA='>
+    <rect x='0.00' y='0.00' width='302.40' height='331.20' />
+  </clipPath>
+</defs>
+<g clip-path='url(#s2m-cpMC4wMHwzMDIuNDB8MC4wMHwzMzEuMjA=)'>
+<rect x='0.00' y='0.00' width='302.40' height='331.20' style='stroke-width: 1.07; stroke: none;' />
+</g>
+<defs>
+  <clipPath id='s2m-cpMTMzLjA0fDI4OC40NXw2OS43M3wxNjcuNDE='>
+    <rect x='133.04' y='69.73' width='155.41' height='97.68' />
+  </clipPath>
+</defs>
+<g clip-path='url(#s2m-cpMTMzLjA0fDI4OC40NXw2OS43M3wxNjcuNDE=)'>
+<rect x='133.04' y='69.73' width='155.41' height='97.68' style='stroke-width: 1.07; stroke: none;' />
+<polyline points='140.11,167.41 140.11,69.73 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='175.43,167.41 175.43,69.73 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='210.75,167.41 210.75,69.73 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='246.07,167.41 246.07,69.73 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='281.39,167.41 281.39,69.73 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='140.11,153.45 178.25,153.45 ' style='stroke-width: 2.56; stroke: #B9C6D6; stroke-linecap: butt;' />
+<polyline points='148.58,130.20 193.79,130.20 ' style='stroke-width: 2.56; stroke: #B9C6D6; stroke-linecap: butt;' />
+<polyline points='140.11,106.94 165.54,106.94 ' style='stroke-width: 2.56; stroke: #B9C6D6; stroke-linecap: butt;' />
+<polyline points='140.11,83.68 140.11,83.68 ' style='stroke-width: 2.56; stroke: #B9C6D6; stroke-linecap: butt;' />
+<circle cx='140.11' cy='83.68' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #C8553D;' />
+<circle cx='140.11' cy='106.94' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #C8553D;' />
+<circle cx='148.58' cy='130.20' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #C8553D;' />
+<circle cx='140.11' cy='153.45' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #C8553D;' />
+<circle cx='140.11' cy='83.68' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='165.54' cy='106.94' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='193.79' cy='130.20' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='178.25' cy='153.45' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #FFFFFF;' />
+</g>
+<g clip-path='url(#s2m-cpMC4wMHwzMDIuNDB8MC4wMHwzMzEuMjA=)'>
+</g>
+<defs>
+  <clipPath id='s2m-cpMTMzLjA0fDI4OC40NXwyMTIuNDB8MzEwLjA4'>
+    <rect x='133.04' y='212.40' width='155.41' height='97.68' />
+  </clipPath>
+</defs>
+<g clip-path='url(#s2m-cpMTMzLjA0fDI4OC40NXwyMTIuNDB8MzEwLjA4)'>
+<rect x='133.04' y='212.40' width='155.41' height='97.68' style='stroke-width: 1.07; stroke: none;' />
+<polyline points='140.11,310.08 140.11,212.40 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='175.43,310.08 175.43,212.40 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='210.75,310.08 210.75,212.40 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='246.07,310.08 246.07,212.40 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='281.39,310.08 281.39,212.40 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='200.86,296.12 210.75,296.12 ' style='stroke-width: 2.56; stroke: #B9C6D6; stroke-linecap: butt;' />
+<polyline points='171.19,272.87 205.10,272.87 ' style='stroke-width: 2.56; stroke: #B9C6D6; stroke-linecap: butt;' />
+<polyline points='186.73,249.61 227.70,249.61 ' style='stroke-width: 2.56; stroke: #B9C6D6; stroke-linecap: butt;' />
+<polyline points='220.64,226.35 260.20,226.35 ' style='stroke-width: 2.56; stroke: #B9C6D6; stroke-linecap: butt;' />
+<circle cx='260.20' cy='226.35' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #C8553D;' />
+<circle cx='227.70' cy='249.61' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #C8553D;' />
+<circle cx='205.10' cy='272.87' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #C8553D;' />
+<circle cx='210.75' cy='296.12' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #C8553D;' />
+<circle cx='220.64' cy='226.35' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='186.73' cy='249.61' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='171.19' cy='272.87' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #FFFFFF;' />
+<circle cx='200.86' cy='296.12' r='3.13' style='stroke-width: 0.71; stroke: #1F2A44; fill: #FFFFFF;' />
+</g>
+<g clip-path='url(#s2m-cpMC4wMHwzMDIuNDB8MC4wMHwzMzEuMjA=)'>
+</g>
+<defs>
+  <clipPath id='s2m-cpMTMzLjA0fDI4OC40NXwxODQuNjl8MjEyLjQw'>
+    <rect x='133.04' y='184.69' width='155.41' height='27.71' />
+  </clipPath>
+</defs>
+<g clip-path='url(#s2m-cpMTMzLjA0fDI4OC40NXwxODQuNjl8MjEyLjQw)'>
+<text x='137.43' y='196.60' style='font-size: 9.50px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='108.92px' lengthAdjust='spacingAndGlyphs'>Same or partly the same</text>
+<text x='137.43' y='206.86' style='font-size: 9.50px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='93.84px' lengthAdjust='spacingAndGlyphs'>advice as the advisor</text>
+</g>
+<g clip-path='url(#s2m-cpMC4wMHwzMDIuNDB8MC4wMHwzMzEuMjA=)'>
+</g>
+<defs>
+  <clipPath id='s2m-cpMTMzLjA0fDI4OC40NXw0Mi4wMnw2OS43Mw=='>
+    <rect x='133.04' y='42.02' width='155.41' height='27.71' />
+  </clipPath>
+</defs>
+<g clip-path='url(#s2m-cpMTMzLjA0fDI4OC40NXw0Mi4wMnw2OS43Mw==)'>
+<text x='137.43' y='53.93' style='font-size: 9.50px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='94.97px' lengthAdjust='spacingAndGlyphs'>Said a number, name</text>
+<text x='137.43' y='64.19' style='font-size: 9.50px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='101.89px' lengthAdjust='spacingAndGlyphs'>or dose with no source</text>
+</g>
+<g clip-path='url(#s2m-cpMC4wMHwzMDIuNDB8MC4wMHwzMzEuMjA=)'>
+<text x='140.11' y='321.04' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='13.16px' lengthAdjust='spacingAndGlyphs'>0%</text>
+<text x='175.43' y='321.04' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='17.92px' lengthAdjust='spacingAndGlyphs'>25%</text>
+<text x='210.75' y='321.04' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='17.92px' lengthAdjust='spacingAndGlyphs'>50%</text>
+<text x='246.07' y='321.04' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='17.92px' lengthAdjust='spacingAndGlyphs'>75%</text>
+<text x='281.39' y='321.04' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='22.69px' lengthAdjust='spacingAndGlyphs'>100%</text>
+<text x='128.11' y='156.47' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='73.48px' lengthAdjust='spacingAndGlyphs'>Farming practice</text>
+<text x='128.11' y='133.21' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='120.14px' lengthAdjust='spacingAndGlyphs'>Pests, diseases and fertilizer</text>
+<text x='128.11' y='109.96' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='92.91px' lengthAdjust='spacingAndGlyphs'>Government schemes</text>
+<text x='128.11' y='86.70' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='35.91px' lengthAdjust='spacingAndGlyphs'>Weather</text>
+<text x='128.11' y='299.14' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='73.48px' lengthAdjust='spacingAndGlyphs'>Farming practice</text>
+<text x='128.11' y='275.88' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='120.14px' lengthAdjust='spacingAndGlyphs'>Pests, diseases and fertilizer</text>
+<text x='128.11' y='252.63' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='92.91px' lengthAdjust='spacingAndGlyphs'>Government schemes</text>
+<text x='128.11' y='229.37' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='35.91px' lengthAdjust='spacingAndGlyphs'>Weather</text>
+<text x='7.97' y='31.74' style='font-size: 9.50px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='170.67px' lengthAdjust='spacingAndGlyphs'>filled: the agent; open: the bare model</text>
+<text x='7.97' y='18.34' style='font-size: 12.50px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='172.64px' lengthAdjust='spacingAndGlyphs'>Agent against the bare model</text>
+</g>
+</g>
+</svg></div><figcaption>Graded by Sarvam-105B against the advisor's real answer, call by call.</figcaption></figure>
+  </section>
+
+  <section class="spread flip">
+    <div class="txt">
+      <h2>Fast enough for a phone line</h2>
+      <p>Half the calls needed 422 ms or less of model time, all turns added up, and 95% finished within 673 ms, over 1.9 model turns on average. I measured this from a laptop in Jaipur, so it includes the network.</p>
+      <p>An answer used about 2,396 input and 66 output tokens on average, which is Rs 40 per 1,000 answers for the model and about Rs 406 per 1,000 answers for Bulbul's voice at the standard price. Most of the input is the spec and the tool definitions, which is the part to cache first.</p>
+    </div>
+    <figure class="chart"><div class="fig-d"><svg role="img" aria-label="Histogram: model time per call in milliseconds" focusable="false" xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 518.40 223.20'>
+<g class='svglite'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+    .svglite g.glyphgroup path {
+      fill: inherit;
+      stroke: none;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: none;'/>
+<defs>
+  <clipPath id='s3d-cpMC4wMHw1MTguNDB8MC4wMHwyMjMuMjA='>
+    <rect x='0.00' y='0.00' width='518.40' height='223.20' />
+  </clipPath>
+</defs>
+<g clip-path='url(#s3d-cpMC4wMHw1MTguNDB8MC4wMHwyMjMuMjA=)'>
+<rect x='0.000000000000064' y='0.00' width='518.40' height='223.20' style='stroke-width: 1.07; stroke: none;' />
+<rect x='33.86' y='42.02' width='470.60' height='148.63' style='stroke-width: 1.07; stroke: none;' />
+<polyline points='33.86,190.65 504.45,190.65 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='33.86,151.04 504.45,151.04 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='33.86,111.42 504.45,111.42 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='33.86,71.81 504.45,71.81 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<rect x='33.86' y='187.48' width='32.01' height='3.17' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='65.87' y='163.72' width='32.01' height='26.94' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='97.88' y='84.49' width='32.01' height='106.17' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='129.90' y='100.33' width='32.01' height='90.32' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='161.91' y='128.85' width='32.01' height='61.80' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='193.92' y='176.39' width='32.01' height='14.26' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='225.94' y='182.73' width='32.01' height='7.92' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='257.95' y='190.65' width='32.01' height='0.00' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='289.96' y='189.07' width='32.01' height='1.58' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='321.98' y='189.07' width='32.01' height='1.58' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='353.99' y='189.07' width='32.01' height='1.58' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='386.00' y='190.65' width='32.01' height='0.00' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='418.02' y='190.65' width='32.01' height='0.00' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='450.03' y='189.07' width='32.01' height='1.58' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<line x1='136.94' y1='190.65' x2='136.94' y2='42.02' style='stroke-width: 0.85; stroke: #C8553D; stroke-dasharray: 2.28,2.28; stroke-linecap: butt;' />
+<line x1='217.29' y1='190.65' x2='217.29' y2='42.02' style='stroke-width: 0.85; stroke: #C8553D; stroke-dasharray: 2.28,2.28; stroke-linecap: butt;' />
+<text x='146.54' y='76.69' style='font-size: 14.80px;fill: #C8553D; font-family: "Caveat";' textLength='95.56px' lengthAdjust='spacingAndGlyphs'>half within 422 ms</text>
+<text x='226.90' y='110.67' style='font-size: 14.80px;fill: #C8553D; font-family: "Caveat";' textLength='97.78px' lengthAdjust='spacingAndGlyphs'>95% within 673 ms</text>
+<text x='28.92' y='193.67' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='4.77px' lengthAdjust='spacingAndGlyphs'>0</text>
+<text x='28.92' y='154.06' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='9.53px' lengthAdjust='spacingAndGlyphs'>25</text>
+<text x='28.92' y='114.44' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='9.53px' lengthAdjust='spacingAndGlyphs'>50</text>
+<text x='28.92' y='74.83' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='9.53px' lengthAdjust='spacingAndGlyphs'>75</text>
+<text x='129.90' y='201.62' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='14.30px' lengthAdjust='spacingAndGlyphs'>400</text>
+<text x='257.95' y='201.62' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='14.30px' lengthAdjust='spacingAndGlyphs'>800</text>
+<text x='386.00' y='201.62' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='21.78px' lengthAdjust='spacingAndGlyphs'>1,200</text>
+<text x='269.15' y='212.92' text-anchor='middle' style='font-size: 9.50px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='13.50px' lengthAdjust='spacingAndGlyphs'>ms</text>
+<text transform='translate(14.34,116.34) rotate(-90)' text-anchor='middle' style='font-size: 9.50px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='20.75px' lengthAdjust='spacingAndGlyphs'>calls</text>
+<text x='7.97' y='31.74' style='font-size: 9.50px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='211.58px' lengthAdjust='spacingAndGlyphs'>milliseconds, measured from a laptop in Jaipur</text>
+<text x='7.97' y='18.34' style='font-size: 12.50px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='264.66px' lengthAdjust='spacingAndGlyphs'>Model time per call, all agent turns added up</text>
+</g>
+</g>
+</svg></div><div class="fig-m"><svg role="img" aria-label="Histogram: model time per call in milliseconds" focusable="false" xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' viewBox='0 0 302.40 230.40'>
+<g class='svglite'>
+<defs>
+  <style type='text/css'><![CDATA[
+    .svglite line, .svglite polyline, .svglite polygon, .svglite path, .svglite rect, .svglite circle {
+      fill: none;
+      stroke: #000000;
+      stroke-linecap: round;
+      stroke-linejoin: round;
+      stroke-miterlimit: 10.00;
+    }
+    .svglite text {
+      white-space: pre;
+    }
+    .svglite g.glyphgroup path {
+      fill: inherit;
+      stroke: none;
+    }
+  ]]></style>
+</defs>
+<rect width='100%' height='100%' style='stroke: none; fill: none;'/>
+<defs>
+  <clipPath id='s3m-cpMC4wMHwzMDIuNDB8MC4wMHwyMzAuNDA='>
+    <rect x='0.00' y='0.00' width='302.40' height='230.40' />
+  </clipPath>
+</defs>
+<g clip-path='url(#s3m-cpMC4wMHwzMDIuNDB8MC4wMHwyMzAuNDA=)'>
+<rect x='0.00' y='-0.000000000000057' width='302.40' height='230.40' style='stroke-width: 1.07; stroke: none;' />
+<rect x='33.86' y='42.02' width='254.60' height='155.83' style='stroke-width: 1.07; stroke: none;' />
+<polyline points='33.86,197.85 288.45,197.85 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='33.86,156.32 288.45,156.32 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='33.86,114.79 288.45,114.79 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<polyline points='33.86,73.25 288.45,73.25 ' style='stroke-width: 0.64; stroke: #E6E2D8; stroke-linecap: butt;' />
+<rect x='33.86' y='194.53' width='17.32' height='3.32' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='51.18' y='169.61' width='17.32' height='28.24' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='68.49' y='86.54' width='17.32' height='111.31' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='85.81' y='103.16' width='17.32' height='94.70' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='103.13' y='133.06' width='17.32' height='64.79' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='120.45' y='182.90' width='17.32' height='14.95' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='137.77' y='189.55' width='17.32' height='8.31' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='155.09' y='197.85' width='17.32' height='0.00' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='172.41' y='196.19' width='17.32' height='1.66' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='189.73' y='196.19' width='17.32' height='1.66' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='207.05' y='196.19' width='17.32' height='1.66' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='224.37' y='197.85' width='17.32' height='0.00' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='241.69' y='197.85' width='17.32' height='0.00' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<rect x='259.01' y='196.19' width='17.32' height='1.66' style='stroke-width: 0.43; stroke: #FFFFFF; stroke-linecap: butt; stroke-linejoin: miter; fill: #6C8EB2;' />
+<line x1='89.62' y1='197.85' x2='89.62' y2='42.02' style='stroke-width: 0.85; stroke: #C8553D; stroke-dasharray: 2.28,2.28; stroke-linecap: butt;' />
+<line x1='133.10' y1='197.85' x2='133.10' y2='42.02' style='stroke-width: 0.85; stroke: #C8553D; stroke-dasharray: 2.28,2.28; stroke-linecap: butt;' />
+<text x='94.82' y='77.37' style='font-size: 12.52px;fill: #C8553D; font-family: "Caveat";' textLength='80.89px' lengthAdjust='spacingAndGlyphs'>half within 422 ms</text>
+<text x='138.29' y='112.99' style='font-size: 12.52px;fill: #C8553D; font-family: "Caveat";' textLength='82.75px' lengthAdjust='spacingAndGlyphs'>95% within 673 ms</text>
+<text x='28.92' y='200.87' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='4.77px' lengthAdjust='spacingAndGlyphs'>0</text>
+<text x='28.92' y='159.34' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='9.53px' lengthAdjust='spacingAndGlyphs'>25</text>
+<text x='28.92' y='117.80' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='9.53px' lengthAdjust='spacingAndGlyphs'>50</text>
+<text x='28.92' y='76.27' text-anchor='end' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='9.53px' lengthAdjust='spacingAndGlyphs'>75</text>
+<text x='85.81' y='208.82' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='14.30px' lengthAdjust='spacingAndGlyphs'>400</text>
+<text x='155.09' y='208.82' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='14.30px' lengthAdjust='spacingAndGlyphs'>800</text>
+<text x='224.37' y='208.82' text-anchor='middle' style='font-size: 9.00px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='21.78px' lengthAdjust='spacingAndGlyphs'>1,200</text>
+<text x='161.15' y='220.12' text-anchor='middle' style='font-size: 9.50px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='13.50px' lengthAdjust='spacingAndGlyphs'>ms</text>
+<text transform='translate(14.34,119.94) rotate(-90)' text-anchor='middle' style='font-size: 9.50px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='20.75px' lengthAdjust='spacingAndGlyphs'>calls</text>
+<text x='7.97' y='31.74' style='font-size: 9.50px;fill: #5B6B8C; font-family: "Source Serif 4";' textLength='211.58px' lengthAdjust='spacingAndGlyphs'>milliseconds, measured from a laptop in Jaipur</text>
+<text x='7.97' y='18.34' style='font-size: 12.50px;fill: #1F2A44; font-family: "Source Serif 4";' textLength='114.70px' lengthAdjust='spacingAndGlyphs'>Model time per call</text>
+</g>
+</g>
+</svg></div><figcaption>Each bar counts calls by the model time they took, in steps of 100 ms.</figcaption></figure>
+  </section>
+
+  <section class="hear" id="hear">
+    <div class="spread">
+      <div class="txt">
+        <h2>Hear it</h2>
+        <p>Three answers from the test, picked by me from those both graders marked as the same advice as the advisor, and spoken by Bulbul v4 Flash in the Aparna voice. The Hindi is exactly what the caller would hear. I ran each clip back through Saaras v4, Sarvam's speech-to-text, and every number came back as written.</p>
+      </div>
+      <p class="note">real calls, real answers</p>
+    </div>
+    <ol class="voices"><li><p class="v-head">Weather, Jhansi, 12 October 2024</p><p class="v-q">A groundnut farmer asks about the weather.</p><audio controls preload="none" src="audio/weather.mp3"></audio><p class="v-hi" lang="hi">शनिवार को बारिश की संभावना 46 प्रतिशत है और तापमान 24 से 32 डिग्री रहेगा। रविवार और सोमवार को बारिश की संभावना 80 से 84 प्रतिशत है। आप अभी सिंचाई रोक दें और बारिश रुकने के बाद ही दवा का छिड़काव करें।</p><p class="v-en">On Saturday the chance of rain is 46%, and the temperature will be 24 to 32 degrees. On Sunday and Monday the chance of rain is 80 to 84%. Stop irrigating for now, and spray only after the rain stops.</p></li><li><p class="v-head">PM-KISAN, Mathura, 4 October 2024</p><p class="v-q">A farmer asks for PM-KISAN's contact details, the day before the 18th instalment was paid.</p><audio controls preload="none" src="audio/scheme.mp3"></audio><p class="v-hi" lang="hi">PM-KISAN योजना में पात्र किसान परिवारों को साल भर में छह हज़ार रुपये मिलते हैं जो दो हज़ार की तीन किस्तों में सीधे बैंक खाते में आते हैं। अगला भुगतान पाँच अक्टूबर को होगा। अधिक जानकारी के लिए आप 155261 या 011-24300606 पर संपर्क कर सकते हैं।</p><p class="v-en">Under PM-KISAN, eligible farming families get six thousand rupees a year, in three instalments of two thousand paid straight into their bank account. The next payment will be on 5 October. For more information, you can contact 155261 or 011-24300606.</p></li><li><p class="v-head">Red rust on mango, Ghazipur, 13 October 2024</p><p class="v-q">A mango grower asks how to control red rust.</p><audio controls preload="none" src="audio/spray.mp3"></audio><p class="v-hi" lang="hi">श्रीमान जी आप कॉपर ऑक्सीक्लोराइड 50 % WP @ 2 ग्राम प्रति लीटर पानी में घोल बनाकर छिड़काव करें| दवा डालने से पहले उसका लेबल ज़रूर पढ़ें और छिड़काव के समय दस्ताने और मास्क पहनें।</p><p class="v-en">Sir, spray copper oxychloride 50% WP at 2 grams per litre of water. Read the label before using the product, and wear gloves and a mask while spraying. The first sentence is the advisors' verified answer, read word for word; the second is the fixed safety line.</p></li></ol>
+  </section>
+
+  <section class="lessons">
+    <h2>What I would tell the programme head</h2>
+    <ol class="grid2">
+      <li>
+        <h3><span class="num">1</span>Size the agent from the conversations</h3>
+        <p>The category field undercounts weather by 13 points. The notes and the answers are the real specification of what the agent must handle, and reading them takes a day.</p>
+      </li>
+      <li>
+        <h3><span class="num">2</span>Doses are read, never generated</h3>
+        <p>For anything a farmer will spray, the agent chooses and the system speaks a verified answer word for word. The answer bank, kept by the subject matter experts, becomes the product.</p>
+      </li>
+      <li>
+        <h3><span class="num">3</span>Treat a handoff as a measured outcome</h3>
+        <p>A handoff is the right answer when the bank has nothing. Track the rate by question type each week; each one is a question the experts answer once, and it goes into the bank.</p>
+      </li>
+      <li>
+        <h3><span class="num">4</span>Keep the test calls as the regression suite</h3>
+        <p>The 200 calls and their grades are the gate for every change of prompt, tool or model, and the dev failures above stay in the suite for good. The grader needs the same care: the experts grade a sample of calls by hand each month, because one changed line of context moved 27% of mine.</p>
+      </li>
+    </ol>
+  </section>
+
+  <section class="plan-s">
+    <div class="spread">
+      <div class="txt">
+        <h2>The first 90 days with a state helpline</h2>
+        <p>Written for a state agriculture department or a central programme taking a helpline like this from pilot to production.</p>
+      </div>
+      <p class="note">the KPIs are agreed on day one, never after</p>
+    </div>
+    <table class="plan">
+      <thead><tr><th scope="col">Days</th><th scope="col">What happens</th><th scope="col">What gets measured</th></tr></thead>
+      <tbody>
+        <tr>
+          <td>1 to 15</td>
+          <td data-label="What happens">Read a month of real calls with the advisors and map the questions the way this note does. Agree the KPIs with the programme head and the data rules with the department: what is stored, for how long, and who reviews it. Load the answer bank and the scheme facts, each with an owner.</td>
+          <td data-label="What gets measured">A baseline from the current line: calls answered, time to answer, repeat calls, and how often advisors refer callers elsewhere.</td>
+        </tr>
+        <tr>
+          <td>16 to 45</td>
+          <td data-label="What happens">Two or three districts, with the agent in shadow mode next to the advisors: Saaras for the caller's speech, Sarvam-105B for routing and tools, Bulbul for the voice. Every dose answer is reviewed by an expert. Weekly evals on the past week's calls.</td>
+          <td data-label="What gets measured">Same advice as the advisor, answers with no source (target zero), handoff rate by question type, and model time per call.</td>
+        </tr>
+        <tr>
+          <td>46 to 90</td>
+          <td data-label="What happens">Go live in the pilot districts with a human one transfer away, then widen district by district. Close the top gaps in the answer bank every week. A readout to the programme head with the KPIs against the baseline.</td>
+          <td data-label="What gets measured">The agreed KPIs against the baseline, cost per answered call, and the plan for the next quarter.</td>
+        </tr>
+      </tbody>
+    </table>
+  </section>
+
+  <section class="spread about">
+    <div class="txt">
+      <h2>Who wrote this</h2>
+      <p>I am a doctor by training (MBBS, SMS Medical College, Jaipur) and the co-founder and COO of Scholar Scribe Consulting in New Delhi, where I run operations and client delivery. Since 2025 we have delivered research work to more than 100 paying clinicians on AI systems we built ourselves: an AI agent set-up that runs most of our delivery, an evidence-synthesis pipeline behind 60+ systematic reviews, a 135M-parameter clinical note reader delivered to a hepatology client, and MCP servers that bring our apps into AI assistants.</p>
+      <p>The part of the work I like most is the part these roles are about: reading what the users actually ask, building the agent around it, testing it on real conversations and fixing what breaks before anyone depends on it.</p>
+      <p class="sign">Naivedhya</p>
+    </div>
+    <div class="side">
+      <div class="card">
+        <p class="card-name">Naivedhya Agrawal</p>
+        <p class="card-role">Co-founder and COO, Scholar Scribe Consulting</p>
+        <p class="card-lines">New Delhi, India<br><a href="mailto:naivedhya27@gmail.com">naivedhya27@gmail.com</a><br><a href="https://github.com/naivedhya27-cmyk">github.com/naivedhya27-cmyk</a></p>
+      </div>
+      <p class="card-links"><a href="https://github.com/naivedhya27-cmyk/kcc-helpline-agent">The code and all 200 calls</a> · <a href="../../resume/">Resume</a> · <a href="../../work/">Other work</a></p>
+    </div>
+  </section>
+
+  <p class="method"><strong>How this was made.</strong> Data: the Kisan Call Centre query log for Uttar Pradesh, 2024, published by the Ministry of Agriculture &amp; Farmers Welfare on data.gov.in under the Government Open Data Licence, India, and mirrored on Hugging Face (rishabha25/kcc_up_2024_100k). Each call's question type was read from the advisor's note, with the category field second. The answer bank is the 79,348 calls from January to August; the 200 test calls are distinct questions from September to November, sampled by question type. Weather facts: the Open-Meteo historical forecast archive for each district, from the call date to four days after it. The agent is sarvam-105b-conversations with tool calling and thinking off; the comparison is the same model with the same context and no tools; the grader is sarvam-105b with a fixed rubric that sees the same call context as the answers, run on both. Phone-number, dose and forecast checks are computed in code. This is my own proof of concept, not a Kisan Call Centre or government system, and no real caller heard it.</p>
+
+</main>
+<footer class="foot wrap">
+  <span>Naivedhya Agrawal · New Delhi</span>
+  <span><a href="mailto:naivedhya27@gmail.com">naivedhya27@gmail.com</a> · <a href="https://github.com/naivedhya27-cmyk">GitHub</a></span>
+</footer>
+</body>
+</html>

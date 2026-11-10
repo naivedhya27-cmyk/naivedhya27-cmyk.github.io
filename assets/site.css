@@ -113,6 +113,7 @@ mark {
 /* charts */
 figure { margin: 0; }
 figure.chart { max-width: 900px; }
+@media (min-width: 1200px) { .spread > figure.chart { position: sticky; top: 28px; } }
 .fig-d svg, .fig-m svg, .fig-any svg { display: block; width: 100%; height: auto; overflow: visible; }
 .fig-m { display: none; max-width: 520px; }
 @media (max-width: 639px) { .fig-d { display: none; } .fig-m { display: block; } }
@@ -283,3 +284,13 @@ ol.say li { margin: .35em 0 .7em; max-width: 62ch; }
 .js figure.chart .dot, .js figure.chart .hand { opacity: 0; transition: opacity .6s ease 1.2s; }
 .js figure.chart.in .dot, .js figure.chart.in .hand { opacity: 1; }
 @media (prefers-reduced-motion: reduce) { .printout, .printout:hover { transition: none; } }
+
+/* Sarvam note (10 Nov 2026): three voice samples, the Hindi as spoken and an English gist */
+.voices { list-style: none; margin: clamp(28px, 3.4vw, 56px) 0 0; padding: 0; display: grid; grid-template-columns: repeat(3, minmax(0, 1fr)); gap: clamp(24px, 3vw, 56px); }
+.voices li { border-top: 1px solid var(--rule); padding-top: 1em; min-width: 0; }
+.v-head { font-weight: 600; margin: 0; max-width: none; }
+.v-q { color: var(--soft); font-size: .9em; font-style: italic; margin: .2em 0 .9em; max-width: none; }
+.voices audio { display: block; width: 100%; height: 40px; margin: 0 0 .9em; }
+.v-hi { font-family: "Noto Serif Devanagari", "Source Serif 4", serif; font-size: 1.02em; line-height: 1.8; margin: 0 0 .7em; max-width: none; }
+.v-en { font-size: .9em; color: var(--soft); margin: 0; max-width: none; }
+@media (max-width: 899px) { .voices { grid-template-columns: minmax(0, 1fr); } }
